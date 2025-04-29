@@ -1,0 +1,70 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# TypeScript compiled output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables and sensitive information
+.env
+.env.local
+.env.*.local
+*.pem
+config.json
+agent-config.yml
+# Keep the example configuration
+!agent-config.yml.example
+
+# IDE and editor files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.sublime-*
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Redis data files (if used locally)
+dump.rdb
+redis-data/
+
+# Docker volumes and data
+docker-volumes/
+data/
+
+# Build artifacts
+*.js.map
+
+# MCP mock server built files
+mcp-mock-server/dist/
+mcp-mock-server/build/
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2016", // Or a later version like ES2020, ESNext
+    "module": "CommonJS", // Standard for Node.js
+    "outDir": "./dist", // Output directory for compiled JavaScript
+    "rootDir": "./src", // Source directory for TypeScript files (we'll move server.ts here later)
+    "strict": true, // Enable all strict type-checking options
+    "esModuleInterop": true, // Enables compatibility with CommonJS modules
+    "skipLibCheck": true, // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
+    "resolveJsonModule": true, // Allow importing JSON files
+    "moduleResolution": "node", // Use Node.js module resolution strategy
+    "sourceMap": true, // Generate source maps for debugging
+    // Uncommented typeRoots to include our custom type declarations
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "baseUrl": "./",
+    "paths": {
+      "*": ["src/types/*"]
+    }
+  },
+  "include": ["src/**/*"], // Which files to include in compilation
+  "exclude": ["node_modules", "**/*.spec.ts"] // Which files/folders to exclude
+}

@@ -1,0 +1,55 @@
+{
+  "name": "langchain-node-agent-mcp-a2a",
+  "version": "1.0.0",
+  "description": "Node.js LangChain Agent with MCP (SSE) and A2A Protocol",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [
+    "langchain",
+    "ai",
+    "agent",
+    "nodejs",
+    "express",
+    "mcp",
+    "a2a"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/anthropic": "^0.3.0",
+    "@langchain/community": "^0.2.9",
+    "@langchain/core": "^0.3.49",
+    "@langchain/openai": "^0.5.7",
+    "@langchain/redis": "^0.1.1",
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "@types/js-yaml": "^4.0.9",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "eventsource": "^3.0.2",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0",
+    "langchain": "^0.3.24",
+    "pkce-challenge": "^5.0.0",
+    "redis": "^4.7.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/eventsource": "^1.1.15",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.2",
+    "@types/uuid": "^9.0.8",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

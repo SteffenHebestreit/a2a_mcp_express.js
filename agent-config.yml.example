@@ -1,0 +1,94 @@
+# Agent Configuration Template
+# Copy this file to agent-config.yml and modify as needed
+
+# Server Configuration
+server:
+  port: 3000
+  baseUrl: "http://localhost:3000"
+  name: "MyLangchainNodeAgentMCP"
+  description: "A helpful agent built with Langchain and Node.js using MCP."
+
+# MCP Configuration
+mcp:
+  serverUrl: "http://mcp-mock:9000/mcp"
+  # Static tools to fall back to if MCP discovery fails
+  staticTools:
+    - name: "mcp_calculator"
+      description: "Calculates the result of a mathematical expression."
+      schema:
+        properties:
+          expression:
+            type: "string"
+            description: "The mathematical expression to evaluate"
+        required: ["expression"]
+    - name: "mcp_weather_service"
+      description: "Gets the weather for a location."
+      schema:
+        properties:
+          location:
+            type: "string"
+            description: "The location to get weather for"
+        required: ["location"]
+
+# LLM Configuration
+llm:
+  provider: "openai"  # Options: openai, ollama, anthropic
+  model: "gpt-4o-mini"
+  temperature: 0.7
+  
+  # Provider-specific configuration
+  openai:
+    apiKey: ""  # Your OpenAI API key
+    apiUrl: ""  # Optional: Custom OpenAI API URL
+  
+  ollama:
+    baseUrl: "http://localhost:11434"
+  
+  anthropic:
+    apiKey: ""  # Your Anthropic API key
+
+# Agent Configuration
+agent:
+  # System Prompt with Template Variables:
+  # {name} - Will be replaced with server.name value
+  # {description} - Will be replaced with server.description value
+  # {baseUrl} - Will be replaced with server.baseUrl value
+  systemPrompt: |
+    You are {name}, {description}.
+    Your Agent ID is {baseUrl}. You have access to MCP tools that provide various capabilities,
+    and an A2A tool ('ask_another_a2a_agent') to interact with other agents.
+    For the A2A tool, provide the target agent's base URL ('targetAgentId') and the specific question or data ('taskInput').
+    Think step-by-step before deciding on an action. Respond directly if no tool is needed.
+  verbose: true
+  handleParsingErrors: true
+
+# A2A Protocol Configuration
+a2a:
+  version: "1.0"
+  skills:
+    - id: "general_query"
+      name: "General Query"
+      description: "Accepts natural language questions and attempts to answer using internal knowledge and tools."
+      inputModes: ["text/plain"]
+      outputModes: ["text/plain"]
+    - id: "mcp_calc_proxy"
+      name: "MCP Calculator Proxy"
+      description: "Exposes the internal MCP calculator tool via A2A. Expects data part { expression: '...' }."
+      inputModes: ["application/json"]
+      outputModes: ["application/json"]
+    # Add more skills as needed
+
+# Memory Configuration
+memory:
+  type: "memory"  # Options: memory, redis
+  redis:
+    url: "redis://redis:6379"  # Required when type is redis
+    chatHistoryTtl: 86400  # 24 hours in seconds
+
+# Logging Configuration
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARN, ERROR, FATAL
+
+# Docker Configuration
+docker:
+  baseUrlHostname: "agent.localhost"  # Hostname for Traefik routing
