@@ -606,3 +606,7 @@ For production deployments:
 - **Redis**:
   - [Redis Documentation](https://redis.io/documentation)
   - [LangChain Redis Integration](https://js.langchain.com/docs/integrations/chat_memory/redis)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
