@@ -18,7 +18,7 @@
     "mcp",
     "a2a"
   ],
-  "author": "",
+  "author": "Steffen Hebestreit",
   "license": "MIT",
   "dependencies": {
     "@langchain/anthropic": "^0.3.0",
