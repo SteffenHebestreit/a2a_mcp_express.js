@@ -33,11 +33,13 @@ The agent serves as both an MCP client (consuming tools from MCP servers) and an
 └── src                       # Application source code
     ├── server.ts             # Main Express app, initializes agent, tools, and defines processWithAgent logic
     ├── config                # Environment configuration
-    │   └── index.ts          # Configuration loader and validation
+    │   ├── index.ts          # Configuration loader and validation
+    │   └── loader.ts         # YAML and environment variable configuration loader
     ├── routes                # Express routers
     │   ├── api.ts            # `/api/invoke` user endpoint
     │   └── a2a.ts            # A2A endpoints (`/.well-known/agent.json`, `/a2a/message`)
     ├── agent                 # Agent orchestration logic
+    │   ├── agent.ts          # Agent setup and initialization
     │   └── memory.ts         # Chat history management (in-memory or Redis)
     ├── mcp                   # MCP client and tool wrappers
     │   ├── client.ts         # MCP SDK client initialization and calls
