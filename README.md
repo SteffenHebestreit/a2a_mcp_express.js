@@ -6,6 +6,7 @@ This repository implements a Node.js AI agent using Express, LangChain, the Mode
 
 - **[OVERVIEW.md](./OVERVIEW.md)** - A simplified guide to the MCP & A2A agent for non-technical users
 - **[CODE_STRUCTURE.md](./CODE_STRUCTURE.md)** - Detailed documentation of each source file and its purpose in the system
+- **[A2A_DOCKER_DEMO.md](./A2A_DOCKER_DEMO.md)** - Documentation for the Agent-to-Agent Docker demonstration
 
 ## Overview
 

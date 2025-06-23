@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import logger from './utils/logger';
 import { requestLoggerMiddleware, errorLoggerMiddleware, getRequestId } from './utils/requestLogger';
 
@@ -177,11 +178,120 @@ async function processWithAgent(userPrompt: string, conversationId: string, requ
     try {
         const result = await agentExecutor.invoke({ input: userPrompt });
         logger.debug(`${logPrefix} Agent execution result:`, result);
+  // Check if the output is a JSON that contains a tool call
+        if (typeof result.output === 'string' && isToolCallJSON(result.output)) {
+            logger.info(`${logPrefix} Detected tool call JSON, executing tool...`);
+            logger.debug(`${logPrefix} Tool call JSON: ${result.output}`);
+            const toolResult = await executeToolFromJSON(result.output);
+            logger.info(`${logPrefix} Tool execution completed with result:`, toolResult);
+            return { reply: toolResult, conversationId, status: "complete" };
+        } else {
+            logger.debug(`${logPrefix} Output is not a tool call JSON or isToolCallJSON returned false.`);
+            if (typeof result.output === 'string' && result.output.includes('"tool"')) {
+                logger.debug(`${logPrefix} Output contains "tool" but wasn't detected as tool call: ${result.output}`);
+                try {
+                    const parsed = JSON.parse(result.output);
+                    logger.debug(`${logPrefix} Successfully parsed as JSON:`, parsed);
+                } catch (e) {
+                    logger.debug(`${logPrefix} Failed to parse as JSON:`, e);
+                }
+            }
+        }
+        
         return { reply: result.output, conversationId, status: "complete" };
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(`${logPrefix} Error during agent execution for ${conversationId}:`, errorMessage);
         return { error: `Agent execution error: ${errorMessage}`, conversationId };
+    }
+}
+
+// Helper function to check if a string is a valid JSON tool call
+function isToolCallJSON(output: string): boolean {
+    try {
+        const parsed = JSON.parse(output);
+        return (
+            (parsed.tool && typeof parsed.tool === 'string') || 
+            (parsed.action && typeof parsed.action === 'string')
+        );
+    } catch (e) {
+        return false;
+    }
+}
+
+// Helper function to execute a tool from JSON
+async function executeToolFromJSON(jsonOutput: string): Promise<string> {
+    try {
+        const parsed = JSON.parse(jsonOutput);
+        const toolName = parsed.tool || parsed.action;
+        
+        logger.debug(`Executing tool from JSON: ${toolName}`, parsed);
+        
+        if (toolName === 'ask_another_a2a_agent') {
+            const targetAgentId = parsed.targetAgentId;
+            const taskInput = parsed.taskInput;
+            
+            if (!targetAgentId || !taskInput) {
+                logger.error(`Missing required parameters for ask_another_a2a_agent:`, parsed);                return `Error: Missing required parameters for ask_another_a2a_agent`;
+            }
+            
+            // For A2A tool, we'll use a direct API call rather than the tool
+            try {
+                const taskId = uuidv4();
+                const requestBody = { 
+                    task: { 
+                        id: taskId, 
+                        message: { 
+                            role: 'user', 
+                            parts: [
+                                { type: 'text', content: taskInput }
+                            ] 
+                        } 
+                    } 
+                };                // Use the original target URL
+                logger.debug(`Sending A2A request to ${targetAgentId} with task: ${taskInput}`);
+                
+                const resp = await axios.post(`${targetAgentId}/a2a/message`, requestBody, { 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    timeout: 15000 
+                });
+                
+                const responseTask = resp.data;
+                logger.debug(`Received A2A response:`, responseTask);
+                  let result = `Response from ${targetAgentId} (${responseTask.status.state}): `;
+                if (responseTask.status.message?.parts?.length) {
+                    const text = responseTask.status.message.parts.find((p: any) => p.type === 'text')?.content
+                        ?? JSON.stringify(responseTask.status.message.parts[0].content);
+                    result += text;
+                } else if (responseTask.artifacts?.length) {
+                    result += `Artifacts: ${responseTask.artifacts.length}`;
+                }
+                
+                return result;
+            } catch (e: any) {
+                const msg = e.response ? JSON.stringify(e.response.data) : e.message;
+                logger.error(`Error in A2A communication:`, e);
+                return `Error communicating with agent ${targetAgentId}. ${msg}`;
+            }
+        } else if (toolName.startsWith('mcp_')) {
+            const mcpTools = await getMcpTools();const tool = mcpTools.find(t => t.name === toolName);
+            if (!tool) {
+                logger.error(`MCP tool '${toolName}' not found. Available tools:`, mcpTools.map(t => t.name));
+                return `Error: MCP tool '${toolName}' not found`;
+            }
+            
+            const toolInput = parsed.tool_input || parsed.action_input || {};
+            logger.debug(`Calling MCP tool with input:`, toolInput);
+            
+            // Use invoke instead of _call
+            return await tool.invoke(toolInput);
+        }
+        
+        logger.error(`Unknown tool: '${toolName}'`);
+        return `Error: Unknown tool '${toolName}'`;
+    } catch (e: any) {
+        logger.error(`Error executing tool from JSON:`, e.message, e.stack);
+        return `Error executing tool: ${e.message}`;
     }
 }
 

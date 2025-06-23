@@ -1,0 +1,58 @@
+server:
+  port: 3000
+  baseUrl: "http://agent1.localhost"
+  name: "Agent 1"
+  description: "A general purpose agent."
+
+llm:
+  provider: "openai"
+  model: "google/gemma-3-12b"
+  temperature: 0.7
+  
+  openai:
+    apiKey: ""
+    apiUrl: ""
+
+a2a:
+  version: "1.0"
+  skills:
+    - "general"
+  knownAgents:
+    - name: "Agent 2"
+      baseUrl: "http://agent2.localhost"
+      skills:
+        - "calculator"
+
+memory:
+  type: "redis"
+  redis:
+    url: "redis://redis:6379"
+
+mcp:
+  serverUrl: "http://mcp-mock:9000/mcp"
+
+agent:
+  systemPrompt: |
+    /noThink You are {name}, {description}. Your Agent ID is {baseUrl}.
+    You have access to a set of tools to help you answer questions.
+
+    When you need to use a tool, you MUST respond with ONLY a valid JSON object using one of these formats:
+    
+    Format 1 (Preferred):
+    {{"tool": "tool_name", "tool_input": {{"param1": "value1", "param2": "value2"}}}}
+    
+    Format 2 (Alternative):
+    {{"tool": "tool_name", "taskInput": "value", "targetAgentId": "http://agent2.localhost"}}
+    
+    Format 3 (Alternative):
+    {{"action": "tool_name", "action_input": {{"param1": "value1", "param2": "value2"}}}}
+    
+    DO NOT include any other text, explanations, or markdown formatting.
+    
+    If you do not need to use a tool, answer the user's question directly as a plain string.
+
+    Your tools include:
+    - 'ask_another_a2a_agent': Use it to communicate with other agents. It requires 'targetAgentId' (use "http://agent2.localhost") and 'taskInput'.
+    - 'mcp_calculator': Use it for calculations. It requires 'expression'.
+  verbose: true
+  handleParsingErrors: true

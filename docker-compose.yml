@@ -1,96 +1,72 @@
-services:
-  app:
-    build: # Build the image using Dockerfile
-      context: .
-      dockerfile: Dockerfile
-    container_name: langchain_agent_app
-    restart: unless-stopped
-    depends_on:
-      - mcp-mock # Ensure the mock server is up before starting the app
-      - redis # Ensure Redis is up before starting the app
-    env_file:
-      - .env # Load environment variables from .env file
-    volumes:
-      - ./agent-config.yml:/usr/src/app/agent-config.yml # Mount configuration file
-    networks:
-      - traefik_proxy
-    expose:
-      # Expose the internal port for Traefik
-      - "3000"
-    labels:
-      # --- Traefik Labels ---
-      - "traefik.enable=true"
-      # Define the router for HTTP traffic
-      # Use hostname from .env (AGENT_BASE_URL_HOSTNAME) or default to agent.localhost
-      # You might need to extract the hostname from AGENT_BASE_URL in your .env or set it separately
-      # Example: If AGENT_BASE_URL=http://my-agent.local, set AGENT_BASE_URL_HOSTNAME=my-agent.local
-      - "traefik.http.routers.agent-http.rule=Host(`${AGENT_BASE_URL_HOSTNAME:-agent.localhost}`)"
-      - "traefik.http.routers.agent-http.entrypoints=web" # Use the 'web' entrypoint (port 80)
-      # Define the service Traefik should forward to
-      - "traefik.http.services.agent-service.loadbalancer.server.port=3000" # Internal port of the app service
+version: '3.8'
 
-  reverse-proxy:
-    image: traefik:v2.10 # Use a specific Traefik version
-    container_name: traefik_reverse_proxy
-    restart: unless-stopped
+services:
+  agent1:
+    build: .
+    container_name: agent1
+    environment:
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - .env.agent1
+    volumes:
+      - ./agent1-config.yml:/usr/src/app/agent-config.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.agent1.rule=Host(`agent1.localhost`)"
+      - "traefik.http.routers.agent1.entrypoints=web"
+      - "traefik.http.services.agent1.loadbalancer.server.port=3000"
+    networks:
+      - a2a_network
+
+  agent2:
+    build: .
+    container_name: agent2
+    environment:
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - .env.agent2
+    volumes:
+      - ./agent2-config.yml:/usr/src/app/agent-config.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.agent2.rule=Host(`agent2.localhost`)"
+      - "traefik.http.routers.agent2.entrypoints=web"
+      - "traefik.http.services.agent2.loadbalancer.server.port=3000"
+    networks:
+      - a2a_network
+
+  traefik:
+    image: "traefik:v2.5"
+    container_name: "traefik"
     command:
-      # Enable API and dashboard (insecure, for local dev only)
       - "--api.insecure=true"
       - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false" # Only expose containers with labels
-      # Define the entrypoint for HTTP traffic
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
-      # Expose HTTP port
       - "80:80"
-      # Expose Traefik dashboard (for local dev)
-      - "8081:8080" # Dashboard port mapped to 8081 on host
+      - "8081:8080"
     volumes:
-      # Mount Docker socket to allow Traefik to discover services
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
-      - traefik_proxy
+      - a2a_network
 
-  mcp-mock:
+  redis:
+    image: "redis:alpine"
+    container_name: "redis"
+    ports:
+      - "6379:6379"
+    networks:
+      - a2a_network
+
+  mcp-mock-server:
     build: ./mcp-mock-server
-    container_name: mcp_mock_server
-    restart: unless-stopped
+    container_name: mcp-mock
     ports:
       - "9000:9000"
     networks:
-      - traefik_proxy
-
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --save 60 1 --loglevel warning
-    networks:
-      - traefik_proxy
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: redis_commander
-    restart: unless-stopped
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin123
-    ports:
-      - "8082:8081"
-    depends_on:
-      - redis
-    networks:
-      - traefik_proxy
+      - a2a_network
 
 networks:
-  traefik_proxy:
-    name: traefik_proxy_network
-
-volumes:
-  redis_data:
-    driver: local
+  a2a_network:
+    driver: bridge
